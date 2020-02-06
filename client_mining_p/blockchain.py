@@ -160,13 +160,28 @@ node_identifier = str(uuid4()).replace('-', '')
 # Instantiate the Blockchain
 blockchain = Blockchain()
 
+   #     string_object = json.dumps(self.last_block, sort_keys=True)
 
+    #     proof = 0
+
+    #     while self.valid_proof(string_object, proof) is False:
+    #         proof += 1
+
+    #     return proof
 
 @app.route('/mine', methods=['POST'])
 def mine():
     # Run the proof of work algorithm to get the next proof
+    data = request.get_json()
+    results = ['proof', 'id']
+    print('results', results)
+    print ('data from mine', data)
 
-    proof = blockchain.proof_of_work()
+    if not (i in data for i in results):
+        return jsonify({'message' : 'missing id or value'}), 400
+    
+    # proof = blockchain.proof_of_work()
+    proof = blockchain.last_block()
 
     # Forge the new Block by adding it to the chain with the proof
     previous_hash = blockchain.hash(blockchain.last_block)
