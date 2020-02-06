@@ -113,23 +113,23 @@ class Blockchain(object):
     def last_block(self):
         return self.chain[-1]
 
-    def proof_of_work(self):
-        """
-        Simple Proof of Work Algorithm
-        Stringify the block and look for a proof.
-        Loop through possibilities, checking each one against `valid_proof`
-        in an effort to find a number that is a valid proof
-        :return: A valid proof for the provided block
-        """
-        # Stringify the block
-        string_object = json.dumps(self.last_block, sort_keys=True)
+    # def proof_of_work(self):
+    #     """
+    #     Simple Proof of Work Algorithm
+    #     Stringify the block and look for a proof.
+    #     Loop through possibilities, checking each one against `valid_proof`
+    #     in an effort to find a number that is a valid proof
+    #     :return: A valid proof for the provided block
+    #     """
+    #     # Stringify the block
+    #     string_object = json.dumps(self.last_block, sort_keys=True)
 
-        proof = 0
+    #     proof = 0
 
-        while self.valid_proof(string_object, proof) is False:
-            proof += 1
+    #     while self.valid_proof(string_object, proof) is False:
+    #         proof += 1
 
-        return proof
+    #     return proof
     # let's you use this method without instiating this instance
     # Blockchain.valid_proof 
     @staticmethod
@@ -146,7 +146,7 @@ class Blockchain(object):
         """
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        if guess_hash[:3] == '000':
+        if guess_hash[:6] == '000000':
             print(guess_hash)
             return True
         return False
@@ -161,7 +161,8 @@ node_identifier = str(uuid4()).replace('-', '')
 blockchain = Blockchain()
 
 
-@app.route('/mine', methods=['GET'])
+
+@app.route('/mine', methods=['POST'])
 def mine():
     # Run the proof of work algorithm to get the next proof
 
@@ -191,6 +192,8 @@ def full_chain():
     }
     return jsonify(response), 200
 
+@app.route('/last_block', methods=['GET'])
+def 
 
 # Run the program on port 5000
 if __name__ == '__main__':

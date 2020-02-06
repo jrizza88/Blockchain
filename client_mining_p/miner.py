@@ -3,7 +3,8 @@ import requests
 
 import sys
 import json
-
+from time import time # added time
+from uuid import uuid4 # added uuid 
 
 def proof_of_work(block):
     """
@@ -13,8 +14,15 @@ def proof_of_work(block):
     in an effort to find a number that is a valid proof
     :return: A valid proof for the provided block
     """
-    pass
+    #pass
+    block_string = json.dumps(block, sort_keys=True)
 
+    proof = 0
+
+    while self.valid_proof(block_string, proof) is False:
+        proof += 1
+
+    return proof
 
 def valid_proof(block_string, proof):
     """
@@ -27,7 +35,9 @@ def valid_proof(block_string, proof):
     correct number of leading zeroes.
     :return: True if the resulting hash is a valid proof, False otherwise
     """
-    pass
+    guess = f'{block_string}{proof}'.encode()
+
+    # pass
 
 
 if __name__ == '__main__':
