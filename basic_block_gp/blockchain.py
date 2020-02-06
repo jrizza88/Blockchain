@@ -17,6 +17,8 @@ class Blockchain(object):
         self.chain = []
         self.current_transactions = []
 
+        ## self.chain = [{index, timestamp, etc.}]
+        ## self.current_transactions = [{sender: 'Jam', recipient:'Rose', amount: 10}]
         # Create the genesis block
         self.new_block(previous_hash=1, proof=100)
 
@@ -37,10 +39,17 @@ class Blockchain(object):
         """
 
         block = {
+            # you do not zero index here..you use length so that it can print the current num of the index
             'index': len(self.chain) + 1,
+            # in js it is time.now
             'timestamp': time(),
+            # list of current transaactions 
             'transactions': self.current_transactions,
+
             'proof': proof,
+            # self.previous_hash none is used optional, the 'or' statement is to handle non none  cases. 
+            # previous block originally already starts at 1, you use the code after 
+            # you put all the blocks in self.chain. 
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
 
@@ -73,6 +82,8 @@ class Blockchain(object):
 
         # Step 1
         # Create the string_object: convert block to a string
+        # json.dumps creates it to a string. 
+        # dictionaries are not kept in order; Lists are!
         string_object = json.dumps(block, sort_keys=True)
         # Create the block_string
         block_string = string_object.encode()
@@ -92,7 +103,9 @@ class Blockchain(object):
         # Gonna look like this:
         # '2c931fa172ec39bc333089e0dc03e904a61a0384b994e418249d1e3320f199c1'
         return hash_string
-
+    # property is a built python syntax that let's use you last_block as a property. 
+    # last_block function, but after you instiate it you can refer to it like a property.
+    #  i.e. blockchain.last_block
     @property
     def last_block(self):
         return self.chain[-1]
@@ -114,7 +127,8 @@ class Blockchain(object):
             proof += 1
 
         return proof
-
+    # let's you use this method without instiating this instance
+    # Blockchain.valid_proof 
     @staticmethod
     def valid_proof(block_string, proof):
         """
