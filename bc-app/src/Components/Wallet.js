@@ -33,6 +33,15 @@ function Wallet(){
 
 }, [])
 
+handle_change = e => {
+    e.preventDefault()
+    console.log('id', id)
+    axios.post('http://localhost:5000/user/id', {id: id})
+    .then(response => {
+        console.log('response in handle_change', response)
+    })
+}
+
     return (
         <div>
             <h1>Wallet!</h1>
