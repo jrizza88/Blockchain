@@ -1,6 +1,5 @@
-# Paste your version of blockchain.py from the basic_block_gp
+# Paste your version of blockchain.py from the client_mining_p
 # folder here
-
 import hashlib
 import json
 from time import time
@@ -8,20 +7,11 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 
-# DONE new_block
-# DONE hash
-# DONE proof_of_work
-# DONE valid_proof
-# DONE /chain endpoint
-# DONE /mine endpoint
-
 class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
 
-        ## self.chain = [{index, timestamp, etc.}]
-        ## self.current_transactions = [{sender: 'Jam', recipient:'Rose', amount: 10}]
         # Create the genesis block
         self.new_block(previous_hash=1, proof=100)
 
@@ -42,17 +32,10 @@ class Blockchain(object):
         """
 
         block = {
-            # you do not zero index here..you use length so that it can print the current num of the index
             'index': len(self.chain) + 1,
-            # in js it is time.now
             'timestamp': time(),
-            # list of current transaactions 
             'transactions': self.current_transactions,
-
             'proof': proof,
-            # self.previous_hash none is used optional, the 'or' statement is to handle non none  cases. 
-            # previous block originally already starts at 1, you use the code after 
-            # you put all the blocks in self.chain. 
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
 
@@ -85,8 +68,6 @@ class Blockchain(object):
 
         # Step 1
         # Create the string_object: convert block to a string
-        # json.dumps creates it to a string. 
-        # dictionaries are not kept in order; Lists are!
         string_object = json.dumps(block, sort_keys=True)
         # Create the block_string
         block_string = string_object.encode()
@@ -106,32 +87,11 @@ class Blockchain(object):
         # Gonna look like this:
         # '2c931fa172ec39bc333089e0dc03e904a61a0384b994e418249d1e3320f199c1'
         return hash_string
-    # property is a built python syntax that let's use you last_block as a property. 
-    # last_block function, but after you instiate it you can refer to it like a property.
-    #  i.e. blockchain.last_block
+
     @property
     def last_block(self):
         return self.chain[-1]
 
-    # def proof_of_work(self):
-    #     """
-    #     Simple Proof of Work Algorithm
-    #     Stringify the block and look for a proof.
-    #     Loop through possibilities, checking each one against `valid_proof`
-    #     in an effort to find a number that is a valid proof
-    #     :return: A valid proof for the provided block
-    #     """
-    #     # Stringify the block
-    #     string_object = json.dumps(self.last_block, sort_keys=True)
-
-    #     proof = 0
-
-    #     while self.valid_proof(string_object, proof) is False:
-    #         proof += 1
-
-    #     return proof
-    # let's you use this method without instiating this instance
-    # Blockchain.valid_proof 
     @staticmethod
     def valid_proof(block_string, proof):
         """
@@ -146,56 +106,77 @@ class Blockchain(object):
         """
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        if guess_hash[:6] == '000000':
-            print(guess_hash)
-            return True
-        return False
+        return guess_hash[:6] == '000000'
+
+    def new_transaction(self, sender, recipient, amount):
+        """
+        :param sender: <str> Address of the Recipient
+        :param recipient: <str> Address of the Recipient
+        :param amount: <int> Amount
+        :return: <int> The index of the `block` that will hold this transaction
+        """
+        transaction = {'sender': sender,
+                       'recipient': recipient,
+                       'amount': amount,
+        }
+        self.current_transactions.append(transaction)
+
+        index = len(self.chain) + 1
+
+        return index
+
 
 # Instantiate our Node
 app = Flask(__name__)
 
-# Generate a globally unique address for this node
-node_identifier = str(uuid4()).replace('-', '')
-
 # Instantiate the Blockchain
 blockchain = Blockchain()
 
-   #     string_object = json.dumps(self.last_block, sort_keys=True)
+@app.route('/last_block', methods=['GET'])
+def last_block():
+    last_block = blockchain.last_block
+    response = {'last_block': last_block}
 
-    #     proof = 0
+    return jsonify(response), 200
 
-    #     while self.valid_proof(string_object, proof) is False:
-    #         proof += 1
 
-    #     return proof
 
 @app.route('/mine', methods=['POST'])
 def mine():
-    # Run the proof of work algorithm to get the next proof
+
     data = request.get_json()
-    results = ['proof', 'id']
-    print('results', results)
-    print ('data from mine', data)
 
-    if not (i in data for i in results):
-        return jsonify({'message' : 'missing id or value'}), 400
-    
-    # proof = blockchain.proof_of_work()
-    proof = blockchain.last_block()
+    if 'proof' not in data or 'id' not in data:
+        response = {'message': 'missing a required property'}
+        return jsonify(response), 400
 
-    # Forge the new Block by adding it to the chain with the proof
-    previous_hash = blockchain.hash(blockchain.last_block)
-    block = blockchain.new_block(proof, previous_hash)
+    proof = data['proof']
+    miner_id = data['id']
 
-    response = {
-        'message': 'We mined a new block!',
-        'index': block['index'],
-        'transactions': block['transactions'],
-        'proof': block['proof'],
-        'previous_hash': block['previous_hash']
-    }
+    block_string = json.dumps(blockchain.last_block, sort_keys=True)
 
-    return jsonify(response), 200
+    if blockchain.valid_proof(block_string, proof):
+
+        blockchain.new_transaction("0", miner_id, 1)
+
+        # Forge the new Block by adding it to the chain with the proof
+        previous_hash = blockchain.hash(blockchain.last_block)
+        block = blockchain.new_block(proof, previous_hash)
+
+        response = {
+            'message': 'New Block Forged',
+            'index': block['index'],
+            'transactions': block['transactions'],
+            'proof': block['proof'],
+            'previous_hash': block['previous_hash']
+        }
+
+        return jsonify(response), 200
+
+    else:
+        response = {'message': 'proof is invalid or already submitted'}
+
+        return jsonify(response), 200
 
 
 @app.route('/chain', methods=['GET'])
@@ -207,15 +188,36 @@ def full_chain():
     }
     return jsonify(response), 200
 
-@app.route('/last_block', methods=['GET'])
-def last_b():
-    last_block = blockchain.last_block
-    response = {
-        'message': 'Here is the last block in the chain!',
-        'last_block': last_block
-    }
-    return jsonify(response), 200
+@app.route('/transactions/new', methods=['POST'])
+def new_transaction():
+    data = request.get_json()
+
+    required_properties = ['sender', 'recipient', 'amount']
+    if not all(k in data for k in required_properties):
+    # if 'sender' not in data or 'recipient' not in data or 'amount' not in data:
+        response = {'message': 'required properties not included'}
+        return jsonify(response), 400
+
+    sender = data['sender']
+    recipient = data['recipient']
+    amount = data['amount']
+    index = blockchain.new_transaction(sender, recipient, amount)
+
+    response = {'message': f'added to block {index}'}
+
+    return jsonify(response), 201
+
+
 
 # Run the program on port 5000
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+
+# # DONE new_block
+# # DONE hash
+# # DONE proof_of_work
+# # DONE valid_proof
+# # DONE /chain endpoint
+# # DONE /mine endpoint
+
